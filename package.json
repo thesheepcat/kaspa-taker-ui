@@ -1,0 +1,55 @@
+{
+  "name": "kaspa-taker-ui",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "concurrently \"npm run watch\" \"npm run electron\"",
+    "watch": "webpack --watch",
+    "build": "webpack --mode production",
+    "electron": "wait-on dist/bundle.js && electron .",
+    "package": "electron-builder",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^6.3.1",
+    "@mui/material": "^6.3.1",
+    "@mui/x-data-grid": "7.26.0",
+    "@noble/curves": "^1.8.1",
+    "@svgr/core": "^8.1.0",
+    "@svgr/webpack": "^8.1.0",
+    "electron-is-dev": "3.0.1",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-router-dom": "^7.1.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.0",
+    "@babel/preset-env": "^7.22.0",
+    "@babel/preset-react": "^7.22.0",
+    "babel-loader": "^9.1.2",
+    "concurrently": "9.1.2",
+    "css-loader": "7.1.2",
+    "electron": "34.1.1",
+    "electron-builder": "26.0.6",
+    "style-loader": "4.0.0",
+    "wait-on": "8.0.2",
+    "webpack": "5.97.1",
+    "webpack-cli": "6.0.1"
+  },
+  "build": {
+    "appId": "com.your.app",
+    "files": [
+      "dist/**/*",
+      "public/**/*",
+      "main.js"
+    ],
+    "directories": {
+      "output": "electron-dist"
+    }
+  }
+}
