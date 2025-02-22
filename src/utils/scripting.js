@@ -1,6 +1,11 @@
-import { Keypair, PrivateKey, PublicKey, ScriptBuilder , Opcodes } from "../kaspa-wasm32-sdk/web/kaspa/kaspa.js";
+import { Keypair, PrivateKey, PublicKey, ScriptBuilder , Opcodes, payToScriptHashScript,addressFromScriptPublicKey, NetworkType } from "../kaspa-wasm32-sdk/web/kaspa/kaspa.js";
+import { blake2b } from 'blakejs';
 
-export const buildSwapContract = (secretHash, pkhReceiver, timelock, pkhSender) => {
+export const buildSwapContract = (secretHash, publicKeyString, timelock, senderPublicKeyString) => {
+    const publicKeyHashString = calculateBlake2b(publicKeyString);
+    const senderPublicKeyHashString = calculateBlake2b(senderPublicKeyString);
+    const convertedTimelock = BigInt(timelock);   
+    
     const atomicSwapScript = new ScriptBuilder;    
     atomicSwapScript
         .addOp(Opcodes.OpIf)
@@ -13,24 +18,40 @@ export const buildSwapContract = (secretHash, pkhReceiver, timelock, pkhSender) 
         .addOp(Opcodes.OpEqualVerify)
         .addOp(Opcodes.OpDup)
         .addOp(Opcodes.OpBlake2b)
-        .addData(pkhReceiver)
+        .addData(publicKeyHashString)
         .addOp(Opcodes.OpElse)
-        .addLockTime(timelock)
+        .addLockTime(convertedTimelock)
         .addOp(Opcodes.OpCheckLockTimeVerify)
         .addOp(Opcodes.OpDup)
         .addOp(Opcodes.OpBlake2b)
-        .addData(pkhSender)
+        .addData(senderPublicKeyHashString)
         .addOp(Opcodes.OpEndIf)
         .addOp(Opcodes.OpEqualVerify)
         .addOp(Opcodes.OpCheckSig)        
     return atomicSwapScript.drain()
 };
 
-export const buildSpendScript = (signature, pubkey, contract, refund=False, secret=None) => {
+const calculateBlake2b = (hexString) => {
+    const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    const hash = blake2b(bytes, null, 32);
+    return Array.from(hash)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+export const getScriptHash = (script) => {
+    return payToScriptHashScript(script);
+}
+
+export const getAddressFromScriptHash = (scriptHash) => {
+    return addressFromScriptPublicKey(scriptHash, NetworkType.Mainnet)
+}
+
+export const buildSpendScript = (signature, publicKeyString, contract, refund=False, secret=None) => {
     const spendingAtomicSwapScript = new ScriptBuilder;    
     spendingAtomicSwapScript
         .addData(signature)
-        .addData(pubkey)
+        .addData(publicKeyString)
     if (refund) {
         spendingAtomicSwapScript.addOp(Opcodes.OpFalse)
     } else {
@@ -41,3 +62,15 @@ export const buildSpendScript = (signature, pubkey, contract, refund=False, secr
     spendingAtomicSwapScript.addData(contract)
     return spendingAtomicSwapScript.drain()
 }
+
+export const buildRedeemScript = (signature, publicKeyString, contract, secret) => {
+    const spendingAtomicSwapScript = new ScriptBuilder;    
+    spendingAtomicSwapScript
+        .addData(signature)    
+        .addData(publicKeyString)
+        .addData(secret)
+        .addOp(Opcodes.OpTrue)
+        .addData(contract)    
+    return spendingAtomicSwapScript.drain()
+}
+

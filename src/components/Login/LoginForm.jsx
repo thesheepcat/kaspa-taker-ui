@@ -24,7 +24,7 @@ const LoginForm = () => {
   const [userAddressString, setUserAddressString] = useState("");
 
   const handleGenerateNewKeys = () => {
-    const userKeyPair = new Keypair.random();
+    const userKeyPair = Keypair.random();
     console.log(userKeyPair);
     const privateKey = userKeyPair.privateKey;
     setPrivateKey(privateKey);
@@ -80,7 +80,6 @@ return (
             <TextField                
                   fullWidth
                   label="Private key"
-                  name="privateKey"
                   value={privateKeyString}
                   InputProps={{
                     readOnly: true
@@ -88,8 +87,7 @@ return (
             />
             <TextField                
                   fullWidth
-                  label="Public key"
-                  name="publicKey"
+                  label="Public key"                  
                   value={publicKeyString}
                   InputProps={{
                     readOnly: true
@@ -98,7 +96,6 @@ return (
             <TextField                
                   fullWidth
                   label="User address"
-                  name="userAddress"
                   value={userAddressString}
                   InputProps={{
                     readOnly: true

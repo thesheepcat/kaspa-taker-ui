@@ -33,6 +33,7 @@ async function createWindow() {
         callback({ requestHeaders });
         }
     );
+    app.commandLine.appendSwitch('ignore-certificate-errors');
 
     mainWindow.loadFile('public/index.html');
 

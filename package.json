@@ -22,10 +22,13 @@
     "@noble/curves": "^1.8.1",
     "@svgr/core": "^8.1.0",
     "@svgr/webpack": "^8.1.0",
+    "blakejs": "^1.2.1",
+    "bolt11": "^1.4.1",
     "electron-is-dev": "3.0.1",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "react-router-dom": "^7.1.1"
+    "react-router-dom": "^7.1.1",
+    "websocket": "^1.0.35"
   },
   "devDependencies": {
     "@babel/core": "^7.22.0",

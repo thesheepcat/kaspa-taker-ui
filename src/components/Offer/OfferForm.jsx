@@ -43,11 +43,11 @@ const OfferForm = () => {
     swapType,
     setSwapType
   } = useContext(GeneralContext);
-  const [amount, setAmount] = useState("");
   
+  const [amount, setAmount] = useState("");
   const [fromCoin, setFromCoin] = useState(BTC);
   const [toCoin, setToCoin] = useState(KAS);
-  const [exchangeRate, setExchangeRate] = useState(null);  
+  const [exchangeRate, setExchangeRate] = useState("");  
   const [isLoadingOffer, setIsLoadingOffer] = useState(false);
 
   const handleAmount = (amount) => {
@@ -127,7 +127,6 @@ return (
           <TextField                
                 fullWidth
                 label="Amount"
-                name="amount"
                 type="number"
                 value={amount}
                 onChange={(e) => handleAmount(e.target.value)}
@@ -144,7 +143,6 @@ return (
               <TextField
                 fullWidth
                 label="From"
-                name="from"
                 value={fromCoin.name}
                 InputProps={{
                   readOnly: true 
@@ -172,7 +170,6 @@ return (
             <TextField
                 fullWidth
                 label="To"
-                name="to"
                 value={toCoin.name}
                 InputProps={{
                   readOnly: true 
@@ -183,7 +180,6 @@ return (
           <TextField                
                 fullWidth
                 label="Maker address"
-                name="makerAddress"
                 value={makerAddress}
                 InputProps={{
                   readOnly: true 
@@ -224,7 +220,6 @@ return (
               <TextField
                 fullWidth
                 label="Receiving amount"
-                name="receiving"
                 value={receivingAmount}
                 InputProps={{
                   readOnly: true,
@@ -238,7 +233,6 @@ return (
               <TextField
                 fullWidth
                 label="Exchange rate"
-                name="exchangeRate"
                 value={exchangeRate}
                 InputProps={{
                   readOnly: true,

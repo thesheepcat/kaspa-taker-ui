@@ -1,4 +1,5 @@
-import { RpcClient, Address, Resolver, ConnectStrategy } from "../kaspa-wasm32-sdk/web/kaspa/kaspa.js";
+globalThis.WebSocket = require('websocket').w3cwebsocket;
+import { RpcClient, Address, Resolver } from "../kaspa-wasm32-sdk/web/kaspa/kaspa.js";
 import load from "../kaspa-wasm32-sdk/web/kaspa/kaspa.js";
 
 export const checkKaspaNodeConnection = async () => {    
@@ -9,28 +10,7 @@ export const checkKaspaNodeConnection = async () => {
             resolver: new Resolver(),
             networkId: "mainnet"
         })
-        await rpc.connect({
-                    /**
-                     * Indicates if the `async fn connect()` method should return immediately
-                     * or wait for connection to occur or fail before returning.
-                     * (default is `true`)
-                     */
-                    blockAsyncConnect: true,
-                    /**
-                     * ConnectStrategy used to configure the retry or fallback behavior.
-                     * In retry mode, the WebSocket will continuously attempt to connect to the server.
-                     * (default is {link ConnectStrategy.Retry}).
-                     */
-                    strategy: ConnectStrategy.Retry,
-                    /**
-                     * A custom connection timeout in milliseconds.
-                     */
-                    timeoutDuration: 20000,
-                    /** 
-                     * A custom retry interval in milliseconds.
-                     */
-                    retryInterval: 10000,
-                })
+        await rpc.connect();
         let is_connected = await rpc.isConnected;        
         console.log("Connected to Kaspad: ", is_connected);
         //const { networkId } = await rpc.getServerInfo();
@@ -45,6 +25,7 @@ export const checkKaspaNodeConnection = async () => {
             return;
         }
         console.log(entries[0]);
+        rpc.disconnect();
     } catch (error) {
         console.error("Error sending transaction:", error);
     }

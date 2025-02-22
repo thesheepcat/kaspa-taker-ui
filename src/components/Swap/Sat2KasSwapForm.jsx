@@ -13,10 +13,11 @@ import {
   CircularProgress
 } from '@mui/material';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import { Keypair, PrivateKey, PublicKey, Address, addressFromScriptPublicKey, NetworkType } from "../../kaspa-wasm32-sdk/web/kaspa/kaspa.js";
+import { Keypair, PrivateKey, PublicKey, Address, addressFromScriptPublicKey, NetworkType, XOnlyPublicKey } from "../../kaspa-wasm32-sdk/web/kaspa/kaspa.js";
 import { SwapType, getSat2kasInitSwapRequest, getDataFromMaker } from "../../utils/communication.js";
+import { buildSwapContract, getScriptHash, getAddressFromScriptHash } from "../../utils/scripting.js";
 import { GeneralContext } from "../ContextProviders/GeneralContextProvider.jsx";
-
+import {decodeInvoice} from "../../utils/lnInvoice.js";
 
 /*
 REQUEST
@@ -40,33 +41,41 @@ const BTC = {
   symbol: "Satoshi"
 }
 
-const Sat2KasSwapForm = () => {
-  const { privateKey, setPrivateKey, publicKey, setPublicKey, makerAddress, receivingAmount, setReceivingAmount, priceForMaker } = useContext(GeneralContext);
+const Sat2KasSwapForm = () => {  
+  const { 
+      privateKey, 
+      setPrivateKey, 
+      publicKey, 
+      setPublicKey,
+      userAddress,
+      makerAddress, 
+      receivingAmount, 
+      setReceivingAmount, 
+      priceForMaker, 
+      setPriceForMaker
+    } = useContext(GeneralContext);
   const [destinationAddress, setDestinationAddress] = useState("");
   const [senderAddress, setSenderAddress] = useState("");
+  const [receiverAddress, setReceiverAddress] = useState(userAddress.toString());
   const [p2shAddressFromMaker, setP2shAddressFromMaker] = useState("");
   const [lnInvoice, setLnInvoice] = useState("");
-  
+  const [timelock, setTimelock] = useState(0);
+  const [secretHash, setSecretHash] = useState("");
+  const [satAmount, setSatAmount] = useState("");
+  const [calculatedP2shAdress, setCalculatedP2shAdress] = useState("");
+  const [secret, setSecret] = useState("");
+    
   const [amount, setAmount] = useState("");
   const [fromCoin, setFromCoin] = useState(BTC);
-  const [toCoin, setToCoin] = useState(KAS);
-  const [swapType, setSwapType] = useState(SwapType.SAT2KAS);
+  const [toCoin, setToCoin] = useState(KAS);  
   const [exchangeRate, setExchangeRate] = useState(null);  
   const [isLoadingOffer, setIsLoadingOffer] = useState(false);
 
-
-  const handleReceivingAddress = (value) => {
+  const handleDestinationAddress = (value) => {
     setDestinationAddress(value);
   }
 
-
-  const initizalizeSwapWithMaker = async () => {    
-    const privkey = 'b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef';
-    const pubkey = 'dff1d77f2a671c5f36183726db2341be58feae1da2deced843240f7b502ba659';
-    const privateKey = new PrivateKey(privkey);
-    const publicKey = new PublicKey(pubkey);
-    const receiverAddress = privateKey.toAddress(NetworkType.Mainnet).toString();
-    
+  const handleinitizalizeSwapWithMaker = async () => {    
     const initilizeSat2KasSwapRequest = getSat2kasInitSwapRequest(receiverAddress, receivingAmount, priceForMaker, privateKey, publicKey);
     const response = await getDataFromMaker(initilizeSat2KasSwapRequest, makerAddress);
     console.log("response");
@@ -76,11 +85,32 @@ const Sat2KasSwapForm = () => {
     setLnInvoice(response["ln_invoice"]);
   }
 
+  const handleDecodeInvoice = () => {
+    const {secretHash, satAmount, timelock} = decodeInvoice(lnInvoice);
+    setSecretHash(secretHash);
+    setSatAmount(satAmount);
+    setTimelock(timelock);
+  }
+
   const handleGetOffer = async () => {
     setIsLoadingOffer(true);
-    await initizalizeSwapWithMaker();
+    await handleinitizalizeSwapWithMaker();
     setIsLoadingOffer(false);
   };
+
+  const handleCalculateP2shAddress = () => {
+    try {
+      const publicKeyString = publicKey.toString();
+      const senderPublicKey = XOnlyPublicKey.fromAddress(new Address(senderAddress)); 
+      const senderPublicKeyString = senderPublicKey.toString();
+      const lockingScript = buildSwapContract(secretHash, publicKeyString, timelock, senderPublicKeyString);
+      const lockingScriptHash = getScriptHash(lockingScript);
+      const p2shAddress = getAddressFromScriptHash(lockingScriptHash);
+      setCalculatedP2shAdress(p2shAddress);
+    } catch (error) {
+      console.log("Calculating P2SH contract generated an error: ", error);
+    }
+  }
 
   
 return (
@@ -102,10 +132,9 @@ return (
         }}>
           <TextField                
                 fullWidth
-                label="Receiving address"
-                name="receivingAddress"
+                label="Destination address"
                 value={destinationAddress}
-                onChange={(e) => handleReceivingAddress(e.target.value)}
+                onChange={(e) => handleDestinationAddress(e.target.value)}
           />          
             <Box sx={{ 
               display: "flex",
@@ -119,8 +148,7 @@ return (
               }}>
               <TextField
                 fullWidth
-                label="Receiving amount"
-                name="receiving"
+                label="Receiving amount"                
                 value={receivingAmount}
                 InputProps={{
                   readOnly: true,
@@ -134,7 +162,6 @@ return (
               <TextField
                 fullWidth
                 label="Exchange rate"
-                name="exchangeRate"
                 value={exchangeRate}
                 InputProps={{
                   readOnly: true,
@@ -148,14 +175,54 @@ return (
               <TextField
                 fullWidth
                 label="Price for maker"
-                name="priceForMaker"
                 value={priceForMaker}
               />
               </Box>
-              <Button
+                <Button
+                  variant="contained"                
+                  onClick={handleinitizalizeSwapWithMaker}
+                  disabled={isLoadingOffer}
+                  sx={{              
+                    width: '200px',
+                    mx: 'auto',
+                    mb: 3,
+                    py: 1.5,
+                    bgcolor: '#6fc7b7',
+                    borderRadius: 2,
+                    '&:hover': {
+                      bgcolor: '#6fc7b7',
+                    }
+                  }}
+                >
+                  {isLoadingOffer ? <CircularProgress size={24} color="inherit" /> : 'Initialize swap'}
+                </Button>
+                <TextField
+                  fullWidth
+                  label="Sender address"                  
+                  value={senderAddress}
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Contract address (from maker)"
+                  value={p2shAddressFromMaker}
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="LN invoice"
+                  value={lnInvoice}
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                />
+                <Button
                 variant="contained"                
-                onClick={initizalizeSwapWithMaker}
-                disabled={isLoadingOffer}
+                onClick={handleDecodeInvoice}
                 sx={{              
                   width: '200px',
                   mx: 'auto',
@@ -168,35 +235,65 @@ return (
                   }
                 }}
               >
-                {isLoadingOffer ? <CircularProgress size={24} color="inherit" /> : 'Initialize swap'}
+                Decode invoice
               </Button>
               <TextField
-                fullWidth
-                label="Sender address"
-                name="senderAddress"
-                value={senderAddress}
-                InputProps={{
-                  readOnly: true,
+                  fullWidth
+                  label="Secret hash"
+                  value={secretHash}
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Sat amount"
+                  value={satAmount}
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Timelock"
+                  value={timelock}
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                />
+                <Button
+                variant="contained"                
+                onClick={handleCalculateP2shAddress}
+                sx={{              
+                  width: '200px',
+                  mx: 'auto',
+                  mb: 3,
+                  py: 1.5,
+                  bgcolor: '#6fc7b7',
+                  borderRadius: 2,
+                  '&:hover': {
+                    bgcolor: '#6fc7b7',
+                  }
                 }}
-              />
+              >
+                Calculate P2SH address
+              </Button>
               <TextField
-                fullWidth
-                label="Contract address (from maker)"
-                name="contractAddress"
-                value={p2shAddressFromMaker}
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
-              <TextField
-                fullWidth
-                label="LN invoice"
-                name="lnInvoice"
-                value={lnInvoice}
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
+                  fullWidth
+                  label="Calculated P2SH address"                  
+                  value={calculatedP2shAdress.toString()}
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Secret"                  
+                  value={secret}
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                />
             </Box>  
         </Box>  
       </Box>
