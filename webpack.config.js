@@ -1,15 +1,15 @@
-const path = require('path');
+const path = require("path");
 
 module.exports = {
-  mode: process.env.NODE_ENV || 'development',
-  entry: './src/index.jsx',
-  target: 'electron-renderer',
+  mode: process.env.NODE_ENV || "development",
+  entry: "./src/index.jsx",
+  target: "electron-renderer",
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js'
+    path: path.resolve(__dirname, "dist"),
+    filename: "bundle.js",
   },
   resolve: {
-    extensions: ['.js', '.jsx']
+    extensions: [".js", ".jsx"],
   },
   module: {
     rules: [
@@ -17,30 +17,30 @@ module.exports = {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: {
-          loader: 'babel-loader',
+          loader: "babel-loader",
           options: {
-            presets: ['@babel/preset-react', '@babel/preset-env']
-          }
-        }
+            presets: ["@babel/preset-react", "@babel/preset-env"],
+          },
+        },
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
+        use: ["style-loader", "css-loader"],
       },
       {
         test: /\.svg$/,
         use: [
           {
-            loader: '@svgr/webpack',
+            loader: "@svgr/webpack",
             options: {
               native: false,
               typescript: false,
-              jsxRuntime: 'automatic'
-            }
-          }
-        ]
-      }
-    ]
+              jsxRuntime: "automatic",
+            },
+          },
+        ],
+      },
+    ],
   },
-  devtool: 'source-map'
+  devtool: "source-map",
 };
