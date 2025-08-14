@@ -1,12 +1,12 @@
 import React from "react";
-import OfferForm from '../components/Offer/OfferForm.jsx';
+import OfferForm from "../components/Offer/OfferForm.jsx";
 
-const OfferView = () => {    
-    return(
-        <>
-            <OfferForm />
-        </>
-    );
+const OfferView = () => {
+  return (
+    <>
+      <OfferForm />
+    </>
+  );
 };
 
 export default OfferView;

@@ -11,7 +11,8 @@
     "build": "webpack --mode production",
     "electron": "wait-on dist/bundle.js && electron .",
     "package": "electron-builder",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -26,6 +27,7 @@
     "bolt11": "^1.4.1",
     "electron-is-dev": "3.0.1",
     "import": "^0.0.6",
+    "prettier": "^3.6.2",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-qr-code": "^2.0.17",
