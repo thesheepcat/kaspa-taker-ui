@@ -26,7 +26,7 @@ const LoginForm = () => {
   const handleGenerateNewKeys = () => {
     const userKeyPair = Keypair.random();
     console.log(userKeyPair);
-    const privateKey = userKeyPair.privateKey;
+    const privateKey = new PrivateKey(userKeyPair.privateKey);
     setPrivateKey(privateKey);
     const privateKeyString = privateKey.toString();
     setPrivateKeyString(privateKeyString);

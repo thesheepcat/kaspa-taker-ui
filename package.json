@@ -25,8 +25,10 @@
     "blakejs": "^1.2.1",
     "bolt11": "^1.4.1",
     "electron-is-dev": "3.0.1",
+    "import": "^0.0.6",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-qr-code": "^2.0.17",
     "react-router-dom": "^7.1.1",
     "websocket": "^1.0.35"
   },

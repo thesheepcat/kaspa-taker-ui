@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import QRCode from 'react-qr-code';
 import {
   Box,
   Container,
@@ -18,6 +19,8 @@ import { SwapType, getSat2kasInitSwapRequest, getDataFromMaker } from "../../uti
 import { buildSwapContract, getScriptHash, getAddressFromScriptHash } from "../../utils/scripting.js";
 import { GeneralContext } from "../ContextProviders/GeneralContextProvider.jsx";
 import {decodeInvoice} from "../../utils/lnInvoice.js";
+import Sat2KasCompleteSwapForm from './Sat2KasCompleteSwapForm.jsx';
+import  {redeemP2shUtxo} from "../../utils/transactions.js";
 
 /*
 REQUEST
@@ -52,9 +55,13 @@ const Sat2KasSwapForm = () => {
       receivingAmount, 
       setReceivingAmount, 
       priceForMaker, 
-      setPriceForMaker
+      setPriceForMaker,
+      derivedP2shAddress,
+      setDerivedP2shAddress
     } = useContext(GeneralContext);
   const [destinationAddress, setDestinationAddress] = useState("");
+  const [derivedP2shAddressString, setDerivedP2shAddressString] = useState("");
+  
   const [senderAddress, setSenderAddress] = useState("");
   const [receiverAddress, setReceiverAddress] = useState(userAddress.toString());
   const [p2shAddressFromMaker, setP2shAddressFromMaker] = useState("");
@@ -62,7 +69,7 @@ const Sat2KasSwapForm = () => {
   const [timelock, setTimelock] = useState(0);
   const [secretHash, setSecretHash] = useState("");
   const [satAmount, setSatAmount] = useState("");
-  const [calculatedP2shAdress, setCalculatedP2shAdress] = useState("");
+  const [lockingScript, setLockingScript] = useState("");
   const [secret, setSecret] = useState("");
     
   const [amount, setAmount] = useState("");
@@ -71,8 +78,11 @@ const Sat2KasSwapForm = () => {
   const [exchangeRate, setExchangeRate] = useState(null);  
   const [isLoadingOffer, setIsLoadingOffer] = useState(false);
 
-  const handleDestinationAddress = (value) => {
-    setDestinationAddress(value);
+  const handleDestinationAddress = (addressString) => {
+    try {
+      const destinationAddress = new Address(addressString);
+      setDestinationAddress(destinationAddress);
+    } catch {}
   }
 
   const handleinitizalizeSwapWithMaker = async () => {    
@@ -92,26 +102,33 @@ const Sat2KasSwapForm = () => {
     setTimelock(timelock);
   }
 
-  const handleGetOffer = async () => {
-    setIsLoadingOffer(true);
-    await handleinitizalizeSwapWithMaker();
-    setIsLoadingOffer(false);
-  };
-
   const handleCalculateP2shAddress = () => {
     try {
       const publicKeyString = publicKey.toString();
       const senderPublicKey = XOnlyPublicKey.fromAddress(new Address(senderAddress)); 
       const senderPublicKeyString = senderPublicKey.toString();
       const lockingScript = buildSwapContract(secretHash, publicKeyString, timelock, senderPublicKeyString);
+      setLockingScript(lockingScript);
       const lockingScriptHash = getScriptHash(lockingScript);
       const p2shAddress = getAddressFromScriptHash(lockingScriptHash);
-      setCalculatedP2shAdress(p2shAddress);
+      setDerivedP2shAddress(p2shAddress);
+      setDerivedP2shAddressString(p2shAddress.toString());
     } catch (error) {
       console.log("Calculating P2SH contract generated an error: ", error);
     }
-  }
+  };
 
+   const handleRedeemUtxoFromP2sh = async () => {
+    try {    
+      await redeemP2shUtxo(privateKey, publicKey, derivedP2shAddress, destinationAddress, lockingScript, secret);
+    } catch (error) {
+      console.error("Error on redeem from P2SH: ", error);
+    }
+  };
+
+  const handleSecret = (secret) => {
+    setSecret(secret);
+  };
   
 return (
     <Container  sx={{ mt: 5, mb: 5, width:"900px" }}>
@@ -220,6 +237,13 @@ return (
                     readOnly: true,
                   }}
                 />
+                {lnInvoice && 
+                  <QRCode
+                    size={256}
+                    style={{ height: "30%", width: "30%" }}
+                    value={lnInvoice}
+                    viewBox="0 0 256 256"
+                  />}
                 <Button
                 variant="contained"                
                 onClick={handleDecodeInvoice}
@@ -281,19 +305,56 @@ return (
               <TextField
                   fullWidth
                   label="Calculated P2SH address"                  
-                  value={calculatedP2shAdress.toString()}
+                  value={derivedP2shAddressString}
                   InputProps={{
                     readOnly: true,
                   }}
                 />
+                <Typography
+                  variant="h6" 
+                  component="h6" 
+                  align="center" 
+                  gutterBottom 
+                  sx={{ fontWeight: 'bold', color: '#333' }}> 
+                    Insert LN invoice pre-image
+                </Typography>
                 <TextField
                   fullWidth
                   label="Secret"                  
                   value={secret}
-                  InputProps={{
-                    readOnly: true,
-                  }}
+                  onChange={(e) => handleSecret(e.target.value)}
                 />
+              {secret &&
+              <Sat2KasCompleteSwapForm/>
+              }
+              {secret &&
+              <Typography
+                  variant="h6" 
+                  component="h6" 
+                  align="center" 
+                  gutterBottom 
+                  sx={{ fontWeight: 'bold', color: '#333' }}> 
+                    Insert LN invoice pre-image
+                </Typography>
+              }
+              {secret &&
+              <Button
+                    variant="contained"                
+                    onClick={handleRedeemUtxoFromP2sh}
+                    sx={{              
+                      width: '200px',
+                      mx: 'auto',
+                      mb: 3,
+                      py: 1.5,
+                      bgcolor: '#6fc7b7',
+                      borderRadius: 2,
+                      '&:hover': {
+                        bgcolor: '#6fc7b7',
+                                  }
+                    }}>
+                      Redeem funds from P2SH
+                </Button>
+              }
             </Box>  
         </Box>  
       </Box>

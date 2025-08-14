@@ -63,7 +63,8 @@ export const buildSpendScript = (signature, publicKeyString, contract, refund=Fa
     return spendingAtomicSwapScript.drain()
 }
 
-export const buildRedeemScript = (signature, publicKeyString, contract, secret) => {
+export const buildRedeemScript = (signature, publicKey, contract, secret) => {
+    const publicKeyString = publicKey.toString();
     const spendingAtomicSwapScript = new ScriptBuilder;    
     spendingAtomicSwapScript
         .addData(signature)    
